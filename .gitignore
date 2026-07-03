@@ -1,0 +1,9 @@
+# WordPress Gitignore
+error_log
+wp-config-local.php
+.htaccess
+.DS_Store
+Thumbs.db
+*.log
+*.zip
+*.tar.gz
