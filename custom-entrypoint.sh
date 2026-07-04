@@ -11,5 +11,9 @@ if [ -z "$(ls -A /var/www/html/wp-content/uploads 2>/dev/null)" ]; then
     chown -R www-data:www-data /var/www/html/wp-content/uploads
 fi
 
+# Dismod and enmod MPM (Fix for Railway Apache MPM crash)
+a2dismod mpm_event || true
+a2enmod mpm_prefork || true
+
 # Call the original entrypoint
 exec docker-entrypoint.sh "$@"
