@@ -92,6 +92,12 @@ define( 'WP_DEBUG', false );
 
 define('DISABLE_WP_CRON', true);
 
+// Dynamically set Site URL to whatever domain is currently being used
+if (isset($_SERVER['HTTP_HOST'])) {
+    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://';
+    define('WP_HOME', $protocol . $_SERVER['HTTP_HOST']);
+    define('WP_SITEURL', $protocol . $_SERVER['HTTP_HOST']);
+}
 /* That's all, stop editing! Happy publishing. */
 
 /** Absolute path to the WordPress directory. */

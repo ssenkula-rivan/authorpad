@@ -1,0 +1,6 @@
+wp-content/
+error_log
+.git/
+.vscode/
+scratch/
+brain/
