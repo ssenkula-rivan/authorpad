@@ -195,6 +195,9 @@ function hello_elementor_search_form() {
  * Create essential pages and navigation menu
  */
 function hello_elementor_setup_pages_and_menu() {
+    // Temporarily disabled to prevent startup issues
+    return;
+    
     // Only run once
     if (get_option('hello_elementor_pages_created')) {
         return;
