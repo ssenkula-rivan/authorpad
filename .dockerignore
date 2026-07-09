@@ -1,0 +1,15 @@
+# Exclude large or temporary files, but keep essential wp-content
+wp-content/uploads/*
+wp-content/cache/*
+wp-content/debug.log
+wp-content/backup*/
+wp-content/ai1wm-backups/*
+error_log
+.git/
+.vscode/
+scratch/
+brain/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
