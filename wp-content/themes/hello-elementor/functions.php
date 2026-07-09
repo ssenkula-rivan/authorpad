@@ -192,20 +192,77 @@ function hello_elementor_search_form() {
 }
 
 /**
- * Create default navigation menu
+ * Create essential pages and navigation menu
  */
-function hello_elementor_create_default_menu() {
-    // Check if menu already exists
+function hello_elementor_setup_pages_and_menu() {
+    // Only run once
+    if (get_option('hello_elementor_pages_created')) {
+        return;
+    }
+    
+    // Create essential pages
+    $pages = array(
+        'home' => array(
+            'title' => 'Home',
+            'content' => '<h2>Welcome to AuthorPad Uganda</h2><p>Your premier platform for writing, publishing, and sharing creative works across East Africa and beyond.</p><h3>What We Offer</h3><ul><li>Professional writing and editing tools</li><li>Publishing and distribution services</li><li>Community of African writers and readers</li><li>Educational resources and mentorship</li></ul><p><strong>Ready to start your writing journey?</strong> <a href="/about">Learn more about us</a> or <a href="/contact">get in touch</a> today!</p>'
+        ),
+        'about' => array(
+            'title' => 'About Us',
+            'content' => '<h2>About AuthorPad Uganda</h2><p>AuthorPad is Uganda\'s leading platform for writers, providing tools and opportunities for creative expression and professional development.</p><h3>Our Mission</h3><p>To empower African writers by providing world-class tools, publishing opportunities, and a supportive community that celebrates our unique voices and stories.</p>'
+        ),
+        'services' => array(
+            'title' => 'Services',
+            'content' => '<h2>Our Services</h2><p>Comprehensive support for writers at every stage of their journey.</p><h3>Writing Platform</h3><p>State-of-the-art writing tools with collaboration features.</p><h3>Publishing Services</h3><p>End-to-end publishing support including professional editing and distribution.</p>'
+        ),
+        'contact' => array(
+            'title' => 'Contact',
+            'content' => '<h2>Get In Touch</h2><p>We\'re here to support your writing journey.</p><h3>Contact Information</h3><p><strong>Email:</strong> info@authorpad.ug<br><strong>Phone:</strong> +256 XXX XXX XXX</p><h3>Office Location</h3><p>Kampala, Uganda</p>'
+        ),
+        'blog' => array(
+            'title' => 'Blog',
+            'content' => '<h2>AuthorPad Blog</h2><p>Discover the latest in African literature, writing craft, publishing insights, and author spotlights.</p>'
+        )
+    );
+    
+    $created_pages = array();
+    
+    foreach ($pages as $slug => $page_data) {
+        // Check if page exists
+        if (!get_page_by_path($slug)) {
+            $page_id = wp_insert_post(array(
+                'post_title' => $page_data['title'],
+                'post_content' => $page_data['content'],
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_name' => $slug,
+                'post_author' => 1,
+            ));
+            
+            if ($page_id && !is_wp_error($page_id)) {
+                $created_pages[] = $slug;
+                
+                // Set home as front page
+                if ($slug === 'home') {
+                    update_option('show_on_front', 'page');
+                    update_option('page_on_front', $page_id);
+                }
+                
+                // Set blog as posts page
+                if ($slug === 'blog') {
+                    update_option('page_for_posts', $page_id);
+                }
+            }
+        }
+    }
+    
+    // Create navigation menu
     $menu_name = 'Main Navigation';
     $menu_exists = wp_get_nav_menu_object($menu_name);
     
-    if (!$menu_exists) {
+    if (!$menu_exists && !empty($created_pages)) {
         $menu_id = wp_create_nav_menu($menu_name);
         
-        // Add menu items for essential pages
-        $pages = array('home', 'about', 'services', 'blog', 'contact');
-        
-        foreach ($pages as $page_slug) {
+        foreach (array('home', 'about', 'services', 'blog', 'contact') as $page_slug) {
             $page = get_page_by_path($page_slug);
             if ($page) {
                 wp_update_nav_menu_item($menu_id, 0, array(
@@ -223,92 +280,10 @@ function hello_elementor_create_default_menu() {
         $locations['menu-1'] = $menu_id;
         set_theme_mod('nav_menu_locations', $locations);
     }
+    
+    update_option('hello_elementor_pages_created', true);
 }
-add_action('wp_loaded', 'hello_elementor_create_default_menu');
-
-/**
- * Navigation verification and debugging
- */
-function hello_elementor_verify_navigation() {
-    // Only for admin users and when ?debug=nav is added to URL
-    if (!current_user_can('manage_options') || !isset($_GET['debug']) || $_GET['debug'] !== 'nav') {
-        return;
-    }
-    
-    echo '<div style="position: fixed; top: 32px; right: 0; background: #fff; padding: 10px; border: 1px solid #ccc; max-width: 300px; z-index: 9999;">';
-    echo '<h4>Navigation Debug Info</h4>';
-    
-    // Check pages
-    $pages = array('home', 'about', 'services', 'contact', 'blog');
-    echo '<strong>Pages:</strong><br>';
-    foreach ($pages as $slug) {
-        $page = get_page_by_path($slug);
-        echo $slug . ': ' . ($page ? '✓' : '✗') . '<br>';
-    }
-    
-    // Check menu
-    $menu_locations = get_nav_menu_locations();
-    echo '<strong>Header Menu:</strong> ' . (isset($menu_locations['menu-1']) ? '✓' : '✗') . '<br>';
-    
-    // Check permalinks
-    echo '<strong>Permalinks:</strong> ' . (get_option('permalink_structure') ? '✓' : '✗') . '<br>';
-    
-    echo '</div>';
-}
-add_action('wp_footer', 'hello_elementor_verify_navigation');
-
-/**
- * Add navigation test widget to admin dashboard
- */
-function hello_elementor_dashboard_widget() {
-    wp_add_dashboard_widget(
-        'authorpad_nav_status',
-        'Navigation Status',
-        'hello_elementor_nav_dashboard_content'
-    );
-}
-
-function hello_elementor_nav_dashboard_content() {
-    $issues = array();
-    
-    // Check essential pages
-    $pages = array('home', 'about', 'services', 'contact', 'blog');
-    $missing_pages = array();
-    foreach ($pages as $slug) {
-        if (!get_page_by_path($slug)) {
-            $missing_pages[] = $slug;
-        }
-    }
-    
-    if ($missing_pages) {
-        $issues[] = count($missing_pages) . ' essential pages missing: ' . implode(', ', $missing_pages);
-    }
-    
-    // Check menu
-    $menu_locations = get_nav_menu_locations();
-    if (!isset($menu_locations['menu-1']) || !$menu_locations['menu-1']) {
-        $issues[] = 'No header menu assigned';
-    }
-    
-    // Check permalinks
-    if (!get_option('permalink_structure')) {
-        $issues[] = 'Using default permalink structure';
-    }
-    
-    if (empty($issues)) {
-        echo '<p style="color: green;">✓ All navigation components are working correctly!</p>';
-        echo '<p><a href="' . home_url('?debug=nav') . '" target="_blank">View debug info on site</a></p>';
-    } else {
-        echo '<p style="color: red;">Issues found:</p>';
-        echo '<ul>';
-        foreach ($issues as $issue) {
-            echo '<li>' . $issue . '</li>';
-        }
-        echo '</ul>';
-        echo '<p><a href="' . admin_url('tools.php?page=authorpad-nav-test') . '">Run full navigation test</a></p>';
-    }
-}
-add_action('wp_dashboard_setup', 'hello_elementor_dashboard_widget');
+add_action('after_setup_theme', 'hello_elementor_setup_pages_and_menu');
 
 function hello_maybe_update_theme_version_in_db() {
 	$theme_version_option_name = 'hello_theme_version';
