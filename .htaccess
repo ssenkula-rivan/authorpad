@@ -1,0 +1,35 @@
+# ---- BEGIN WordPress .htaccess ----
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+# IMPORTANT: Enable symbolic-link following (required on Railway)
+Options +FollowSymLinks
+# Enable rewrites
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Base URL – must be first after RewriteEngine
+    RewriteBase /
+    # -----------------------------------------------------------------
+    # WordPress "pretty permalinks" – send everything that isn't a file
+    # or a directory to index.php
+    # -----------------------------------------------------------------
+    RewriteRule ^index\.php$ - [L]
+    # If the request is an existing file or directory, serve it normally
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    # All other requests go to index.php
+    RewriteRule . /index.php [L]
+</IfModule>
+# Force HTTPS when Railway provides the X‑Forwarded‑Proto header
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+# Default document (optional, harmless)
+DirectoryIndex index.php
+# ---- END WordPress .htaccess ----
