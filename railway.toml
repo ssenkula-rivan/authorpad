@@ -3,8 +3,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "apache2-foreground"
 healthcheckPath = "/"
-healthcheckTimeout = 300
-restartPolicyType = "on_failure"
+healthcheckTimeout = 600
+restartPolicyType = "always"
 restartPolicyMaxRetries = 10
