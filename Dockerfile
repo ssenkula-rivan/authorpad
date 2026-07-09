@@ -25,6 +25,7 @@ RUN chmod 644 /var/www/html/.htaccess
 # Set proper Apache configuration
 RUN echo '<Directory /var/www/html/>' >> /etc/apache2/apache2.conf && \
     echo '    AllowOverride All' >> /etc/apache2/apache2.conf && \
+    echo '    Require all granted' >> /etc/apache2/apache2.conf && \
     echo '</Directory>' >> /etc/apache2/apache2.conf
 
 ENTRYPOINT ["custom-entrypoint.sh"]

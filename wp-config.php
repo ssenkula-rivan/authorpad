@@ -97,14 +97,8 @@ if (isset($_SERVER['HTTP_HOST'])) {
     $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://';
     
     // Use Railway's provided domain or custom domain
-    if (strpos($_SERVER['HTTP_HOST'], '.railway.app') !== false || $_SERVER['HTTP_HOST'] === 'authorpad.ug') {
-        define('WP_HOME', $protocol . $_SERVER['HTTP_HOST']);
-        define('WP_SITEURL', $protocol . $_SERVER['HTTP_HOST']);
-    } else {
-        // Fallback to authorpad.ug
-        define('WP_HOME', 'https://authorpad.ug');
-        define('WP_SITEURL', 'https://authorpad.ug');
-    }
+    define('WP_HOME', $protocol . $_SERVER['HTTP_HOST']);
+    define('WP_SITEURL', $protocol . $_SERVER['HTTP_HOST']);
 } else {
     define('WP_HOME', 'https://authorpad.ug');
     define('WP_SITEURL', 'https://authorpad.ug');
