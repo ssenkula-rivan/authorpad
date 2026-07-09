@@ -1,5 +1,9 @@
 FROM wordpress:php8.1-apache
 
+# Disable and enable MPM modules to fix Railway Apache issues
+RUN a2dismod mpm_event && \
+    a2enmod mpm_prefork
+
 # Enable Apache modules needed for WordPress
 RUN a2enmod rewrite && \
     a2enmod headers && \
