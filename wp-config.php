@@ -92,13 +92,31 @@ define( 'WP_DEBUG', false );
 
 define('DISABLE_WP_CRON', true);
 
-// Set proper site URLs for authorpad.ug
-define('WP_HOME', 'https://authorpad.ug');
-define('WP_SITEURL', 'https://authorpad.ug');
+// Set proper site URLs for Railway deployment
+if (isset($_SERVER['HTTP_HOST'])) {
+    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://';
+    
+    // Use Railway's provided domain or custom domain
+    if (strpos($_SERVER['HTTP_HOST'], '.railway.app') !== false || $_SERVER['HTTP_HOST'] === 'authorpad.ug') {
+        define('WP_HOME', $protocol . $_SERVER['HTTP_HOST']);
+        define('WP_SITEURL', $protocol . $_SERVER['HTTP_HOST']);
+    } else {
+        // Fallback to authorpad.ug
+        define('WP_HOME', 'https://authorpad.ug');
+        define('WP_SITEURL', 'https://authorpad.ug');
+    }
+} else {
+    define('WP_HOME', 'https://authorpad.ug');
+    define('WP_SITEURL', 'https://authorpad.ug');
+}
 
 // Enable proper permalinks
 define('WP_POST_REVISIONS', 3);
 define('AUTOSAVE_INTERVAL', 300);
+
+// Railway-specific optimizations
+define('WP_MEMORY_LIMIT', '256M');
+define('WP_MAX_MEMORY_LIMIT', '512M');
 /* That's all, stop editing! Happy publishing. */
 
 /** Absolute path to the WordPress directory. */
