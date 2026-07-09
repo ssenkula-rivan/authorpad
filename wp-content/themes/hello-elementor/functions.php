@@ -101,6 +101,215 @@ if ( ! function_exists( 'hello_elementor_setup' ) ) {
 }
 add_action( 'after_setup_theme', 'hello_elementor_setup' );
 
+/**
+ * Custom 404 page styles
+ */
+function hello_elementor_404_styles() {
+	if ( is_404() ) {
+		?>
+		<style>
+		.page-content ul {
+			margin: 1em 0;
+			padding-left: 2em;
+		}
+		.search-section, .nav-menu-section, .recent-posts-section, .popular-pages-section {
+			margin: 2em 0;
+			padding: 1em;
+			background: #f9f9f9;
+			border-radius: 5px;
+		}
+		.back-home {
+			text-align: center;
+			margin-top: 2em;
+		}
+		.back-home .button {
+			display: inline-block;
+			padding: 0.8em 1.5em;
+			background: #0073aa;
+			color: white;
+			text-decoration: none;
+			border-radius: 3px;
+		}
+		.back-home .button:hover {
+			background: #005a87;
+		}
+		.nav-menu-section ul {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 1em;
+			list-style: none;
+			padding: 0;
+		}
+		.nav-menu-section li a {
+			padding: 0.5em 1em;
+			background: #e1e1e1;
+			text-decoration: none;
+			border-radius: 3px;
+		}
+		</style>
+		<?php
+	}
+}
+add_action( 'wp_head', 'hello_elementor_404_styles' );
+
+/**
+ * Log 404 errors for debugging
+ */
+function hello_elementor_log_404() {
+	if ( is_404() ) {
+		$requested_url = $_SERVER['REQUEST_URI'] ?? 'Unknown';
+		$referer = $_SERVER['HTTP_REFERER'] ?? 'Direct';
+		$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+		
+		$log_message = sprintf(
+			"[404 Error] URL: %s | Referer: %s | User Agent: %s | Time: %s",
+			$requested_url,
+			$referer,
+			$user_agent,
+			date('Y-m-d H:i:s')
+		);
+		
+		error_log($log_message);
+	}
+}
+add_action( 'wp', 'hello_elementor_log_404' );
+
+/**
+ * Add search form if not available
+ */
+function hello_elementor_search_form() {
+	if ( ! function_exists( 'get_search_form' ) ) {
+		?>
+		<form role="search" method="get" class="search-form" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+			<label>
+				<span class="screen-reader-text"><?php echo _x( 'Search for:', 'label', 'hello-elementor' ); ?></span>
+				<input type="search" class="search-field" placeholder="<?php echo esc_attr_x( 'Search ...', 'placeholder', 'hello-elementor' ); ?>" value="<?php echo get_search_query(); ?>" name="s" />
+			</label>
+			<input type="submit" class="search-submit" value="<?php echo esc_attr_x( 'Search', 'submit button', 'hello-elementor' ); ?>" />
+		</form>
+		<?php
+	}
+}
+
+/**
+ * Create default navigation menu
+ */
+function hello_elementor_create_default_menu() {
+    // Check if menu already exists
+    $menu_name = 'Main Navigation';
+    $menu_exists = wp_get_nav_menu_object($menu_name);
+    
+    if (!$menu_exists) {
+        $menu_id = wp_create_nav_menu($menu_name);
+        
+        // Add menu items for essential pages
+        $pages = array('home', 'about', 'services', 'blog', 'contact');
+        
+        foreach ($pages as $page_slug) {
+            $page = get_page_by_path($page_slug);
+            if ($page) {
+                wp_update_nav_menu_item($menu_id, 0, array(
+                    'menu-item-title' => $page->post_title,
+                    'menu-item-object' => 'page',
+                    'menu-item-object-id' => $page->ID,
+                    'menu-item-type' => 'post_type',
+                    'menu-item-status' => 'publish'
+                ));
+            }
+        }
+        
+        // Set as header menu
+        $locations = get_theme_mod('nav_menu_locations');
+        $locations['menu-1'] = $menu_id;
+        set_theme_mod('nav_menu_locations', $locations);
+    }
+}
+add_action('wp_loaded', 'hello_elementor_create_default_menu');
+
+/**
+ * Navigation verification and debugging
+ */
+function hello_elementor_verify_navigation() {
+    // Only for admin users and when ?debug=nav is added to URL
+    if (!current_user_can('manage_options') || !isset($_GET['debug']) || $_GET['debug'] !== 'nav') {
+        return;
+    }
+    
+    echo '<div style="position: fixed; top: 32px; right: 0; background: #fff; padding: 10px; border: 1px solid #ccc; max-width: 300px; z-index: 9999;">';
+    echo '<h4>Navigation Debug Info</h4>';
+    
+    // Check pages
+    $pages = array('home', 'about', 'services', 'contact', 'blog');
+    echo '<strong>Pages:</strong><br>';
+    foreach ($pages as $slug) {
+        $page = get_page_by_path($slug);
+        echo $slug . ': ' . ($page ? '✓' : '✗') . '<br>';
+    }
+    
+    // Check menu
+    $menu_locations = get_nav_menu_locations();
+    echo '<strong>Header Menu:</strong> ' . (isset($menu_locations['menu-1']) ? '✓' : '✗') . '<br>';
+    
+    // Check permalinks
+    echo '<strong>Permalinks:</strong> ' . (get_option('permalink_structure') ? '✓' : '✗') . '<br>';
+    
+    echo '</div>';
+}
+add_action('wp_footer', 'hello_elementor_verify_navigation');
+
+/**
+ * Add navigation test widget to admin dashboard
+ */
+function hello_elementor_dashboard_widget() {
+    wp_add_dashboard_widget(
+        'authorpad_nav_status',
+        'Navigation Status',
+        'hello_elementor_nav_dashboard_content'
+    );
+}
+
+function hello_elementor_nav_dashboard_content() {
+    $issues = array();
+    
+    // Check essential pages
+    $pages = array('home', 'about', 'services', 'contact', 'blog');
+    $missing_pages = array();
+    foreach ($pages as $slug) {
+        if (!get_page_by_path($slug)) {
+            $missing_pages[] = $slug;
+        }
+    }
+    
+    if ($missing_pages) {
+        $issues[] = count($missing_pages) . ' essential pages missing: ' . implode(', ', $missing_pages);
+    }
+    
+    // Check menu
+    $menu_locations = get_nav_menu_locations();
+    if (!isset($menu_locations['menu-1']) || !$menu_locations['menu-1']) {
+        $issues[] = 'No header menu assigned';
+    }
+    
+    // Check permalinks
+    if (!get_option('permalink_structure')) {
+        $issues[] = 'Using default permalink structure';
+    }
+    
+    if (empty($issues)) {
+        echo '<p style="color: green;">✓ All navigation components are working correctly!</p>';
+        echo '<p><a href="' . home_url('?debug=nav') . '" target="_blank">View debug info on site</a></p>';
+    } else {
+        echo '<p style="color: red;">Issues found:</p>';
+        echo '<ul>';
+        foreach ($issues as $issue) {
+            echo '<li>' . $issue . '</li>';
+        }
+        echo '</ul>';
+        echo '<p><a href="' . admin_url('tools.php?page=authorpad-nav-test') . '">Run full navigation test</a></p>';
+    }
+}
+add_action('wp_dashboard_setup', 'hello_elementor_dashboard_widget');
+
 function hello_maybe_update_theme_version_in_db() {
 	$theme_version_option_name = 'hello_theme_version';
 	// The theme version saved in the database.
