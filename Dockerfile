@@ -5,8 +5,14 @@ RUN a2dismod mpm_event mpm_worker || true && \
     a2enmod mpm_prefork || true && \
     a2enmod rewrite headers || true
 
-# Copy website files
+# Copy website files (including wp-content/uploads)
 COPY . /var/www/html/
+
+# Move uploads to a backup location inside the image so entrypoint can restore them
+# to the persistent volume if the volume is empty
+RUN if [ -d "/var/www/html/wp-content/uploads" ]; then \
+        cp -r /var/www/html/wp-content/uploads /var/www/html/wp-content/uploads_backup; \
+    fi
 
 # Copy and enable our custom entrypoint
 COPY custom-entrypoint.sh /usr/local/bin/
