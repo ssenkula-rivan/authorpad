@@ -1,5 +1,4 @@
 # Exclude large or temporary files, but keep essential wp-content
-wp-content/uploads/*
 wp-content/cache/*
 wp-content/debug.log
 wp-content/backup*/
